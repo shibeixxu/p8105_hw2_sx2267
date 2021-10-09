@@ -9,22 +9,43 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Problem 1
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r,message=FALSE}
+library(tidyverse)
+library(readxl)
+library(dplyr)
+```
+### load the trash data with data cleaning
+```{r load trash data,message=FALSE,warning=FALSE}
+trash_data=read_excel("./data/trash_data.xlsx",sheet = 1,range = cell_cols(1:14))%>%
+  janitor::clean_names()%>%
+  drop_na(dumpster)%>%
+  mutate(sports_balls=round(sports_balls,digits = 0))
+```
+### Load the 2018 and 2019 data and combine into one table
+```{r load 2018 2019 precipitation data,message=FALSE,warning=FALSE}
+prep_2018_data=read_excel("./data/trash_data.xlsx",sheet = 5,skip=1,col_names = TRUE)%>%
+  janitor::clean_names()%>%
+  drop_na(month)%>%
+  mutate(year=2018)
+prep_2019_data=read_excel("./data/trash_data.xlsx",sheet = 4,skip=1,col_names = TRUE)%>%
+  janitor::clean_names()%>%
+  drop_na(month)%>%
+  mutate(year=2019)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r combine 2018 and 2019,message=FALSE,warning=FALSE}
+total_table=bind_rows(prep_2018_data,prep_2019_data)%>%
+  mutate(month=month.name[as.numeric(month)])
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+### Analysis
+The combined 2018 and 2019 precipitation data is a `r size_sum(total_table)` dataset with `r ncol(total_table)` variables and `r nrow(total_table)` data input. The variables of this dataset includes `r names(total_table)`. The total precipitation in 2018 is `r sum(pull(prep_2018_data, total),na.rm=TRUE)`.
+
+The trash table is a `r size_sum(trash_data)` dataser with `r ncol(trash_data)` variable and `r nrow(trash_data)` observations. The variables includes `r names(trash_data)`. The median number of sports balls in a dumpster in 2019 is `r trash_data %>% filter(year==2019)%>%pull(sports_balls)%>%median()` `
+
+## Problem 2
+
+
+
