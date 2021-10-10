@@ -22,6 +22,7 @@ trash_data=read_excel("./data/trash_data.xlsx",sheet = 1,range = cell_cols(1:14)
   janitor::clean_names()%>%
   drop_na(dumpster)%>%
   mutate(sports_balls=round(sports_balls,digits = 0))
+head(trash_data,5)
 ```
 ### Load the 2018 and 2019 data and combine into one table
 ```{r load 2018 2019 precipitation data,message=FALSE,warning=FALSE}
@@ -33,11 +34,14 @@ prep_2019_data=read_excel("./data/trash_data.xlsx",sheet = 4,skip=1,col_names = 
   janitor::clean_names()%>%
   drop_na(month)%>%
   mutate(year=2019)
+head(prep_2018_data,5)
+head(prep_2019_data,5)
 ```
 
 ```{r combine 2018 and 2019,message=FALSE,warning=FALSE}
 total_table=bind_rows(prep_2018_data,prep_2019_data)%>%
   mutate(month=month.name[as.numeric(month)])
+head(total_table,5)
 ```
 
 ### Analysis
@@ -50,10 +54,12 @@ The trash table is a `r size_sum(trash_data)` dataser with `r ncol(trash_data)` 
 ```{r clean pols-month data,message=FALSE,warning=FALSE}
 poll_data=read_csv("./data/pols-month.csv")%>%separate("mon",into=c("year","month","date"))%>%mutate(month=month.name[as.numeric(month)],month=str_to_lower(month),president=recode(prez_gop,"0"="dem","1"="gop"))%>%janitor::clean_names()
 poll_data=select(poll_data,-date,-prez_dem,-prez_gop)
+head(poll_data,5)
 ```
 ```{r load snp, message=FALSE,warning=FALSE}
 snp=read_csv("data/snp.csv")%>%separate("date",into=c("year","month","day"),sep = "-")%>%mutate(month=month.name[as.numeric(month)],month=str_to_lower(month))%>%janitor::clean_names()
 snp=select(snp,-day)
+head(snp,5)
 ```
 ```{r load and clean the unemployment date, message=FALSE, warning=FALSE}
 unemploy=read.csv("./data/unemployment.csv")%>%
@@ -63,11 +69,13 @@ unemploy=read.csv("./data/unemployment.csv")%>%
                values_to = "unemployment rate")%>%
   mutate(year=as.character(year),
     month=recode(month,jan="january",feb="february",mar="march",apr="april",jun="june",jul="july",aug="august",sep="september",oct="october",nov="november",dec="december"))
+head(unemploy,5)
 ```
 
 ```{r bind the table,warning=FALSE,message=FALSE}
 poll_1_data=left_join(poll_data,snp)
 poll_full=left_join(poll_1_data,unemploy)
+head(poll_full,5)
 ```
 The combined poll,snp and unemployment data is a `r size_sum(poll_full)` dataset with `r ncol(poll_full)` variables and `r nrow(poll_full)` data input. The variables of this dataset includes `r names(poll_full)`. The total range of the year included in this data is `r poll_full%>% pull(year)%>%range()`.
 
@@ -81,16 +89,37 @@ baby_data=read_csv("./data/baby_name.csv")%>%
     gender=str_to_lower(gender),
     ethnicity=recode(ethnicity,"asian and paci"="asian and pacific islander","black non hisp"="black non hispanic","white non hisp"="white non hispanic"))%>%
     distinct()
+head(baby_data,5)
 ```
 ### produce the table for the rank of the name olivia
 ```{r table for the name Olivia,warning=FALSE,message=FALSE}
 olivia_table=filter(baby_data,childs_first_name=="olivia")%>%
   select(-gender,-childs_first_name,-count)%>%
   mutate(year_of_birth=as.factor(year_of_birth))
+head(olivia_table,5)
 ```
 
 ### pivot the year into columns
 ```{r}
 pivot_wider(olivia_table,names_from = year_of_birth,values_from = rank)
 ```
+### find the most popular name over time among male children
+```{r,warning=FALSE,message=FALSE}
+male_table=filter(baby_data,rank==1&gender=="male")%>%
+select(-gender,-count,-rank)%>%
+  mutate(year_of_birth=as.factor(year_of_birth))
+head(male_table,5)
+```
+### Pivot the year into columns
+```{r} 
+pivot_wider(male_table,names_from = year_of_birth,values_from = childs_first_name)
+```
+### produce a scatter plot showing the number of children with a name (y axis) against the rank in popularity of that name (x axis) for male, white non-hispanic children born in 2016
+```{r filter the male,white non-hispanic children born in 2016}
+graph_data=filter(baby_data,gender=="male"&year_of_birth==2016&ethnicity=="white non hispanic")
+```
+```{r produce the scatterplot}
+ggplot(graph_data,aes(x=rank,y=count))+geom_point()
+```
+
 
