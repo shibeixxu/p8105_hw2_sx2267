@@ -204,6 +204,51 @@ prep_2019_data=read_excel(&quot;./data/trash_data.xlsx&quot;,sheet = 4,skip=1,co
 </div>
 <div id="problem-2" class="section level2">
 <h2>Problem 2</h2>
+<div id="clean-the-data-in-pols_month" class="section level3">
+<h3>clean the data in pols_month</h3>
+<pre class="r"><code>poll_data=read_csv(&quot;./data/pols-month.csv&quot;)%&gt;%separate(&quot;mon&quot;,into=c(&quot;year&quot;,&quot;month&quot;,&quot;date&quot;))%&gt;%mutate(month=month.name[as.numeric(month)],month=str_to_lower(month),president=recode(prez_gop,&quot;0&quot;=&quot;dem&quot;,&quot;1&quot;=&quot;gop&quot;))%&gt;%janitor::clean_names()
+poll_data=select(poll_data,-date,-prez_dem,-prez_gop)</code></pre>
+<pre class="r"><code>snp=read_csv(&quot;data/snp.csv&quot;)%&gt;%separate(&quot;date&quot;,into=c(&quot;year&quot;,&quot;month&quot;,&quot;day&quot;),sep = &quot;-&quot;)%&gt;%mutate(month=month.name[as.numeric(month)],month=str_to_lower(month))%&gt;%janitor::clean_names()
+snp=select(snp,-day)</code></pre>
+<pre class="r"><code>unemploy=read.csv(&quot;./data/unemployment.csv&quot;)%&gt;%
+  janitor::clean_names()%&gt;%
+  pivot_longer(jan:dec,
+               names_to = &quot;month&quot;,
+               values_to = &quot;unemployment rate&quot;)%&gt;%
+  mutate(year=as.character(year),
+    month=recode(month,jan=&quot;january&quot;,feb=&quot;february&quot;,mar=&quot;march&quot;,apr=&quot;april&quot;,jun=&quot;june&quot;,jul=&quot;july&quot;,aug=&quot;august&quot;,sep=&quot;september&quot;,oct=&quot;october&quot;,nov=&quot;november&quot;,dec=&quot;december&quot;))</code></pre>
+<pre class="r"><code>poll_1_data=left_join(poll_data,snp)
+poll_full=left_join(poll_1_data,unemploy)</code></pre>
+<p>The combined poll,snp and unemployment data is a [960 x 11] dataset with 11 variables and 960 data input. The variables of this dataset includes year, month, gov_gop, sen_gop, rep_gop, gov_dem, sen_dem, rep_dem, president, close, unemployment rate. The total range of the year included in this data is 1947, 2015.</p>
+</div>
+</div>
+<div id="problem-3" class="section level2">
+<h2>Problem 3</h2>
+<pre class="r"><code>baby_data=read_csv(&quot;./data/baby_name.csv&quot;)%&gt;%
+  janitor::clean_names()%&gt;%
+  mutate(
+    childs_first_name=str_to_lower(childs_first_name),
+    ethnicity=str_to_lower(ethnicity),
+    gender=str_to_lower(gender),
+    ethnicity=recode(ethnicity,&quot;asian and paci&quot;=&quot;asian and pacific islander&quot;,&quot;black non hisp&quot;=&quot;black non hispanic&quot;,&quot;white non hisp&quot;=&quot;white non hispanic&quot;))%&gt;%
+    distinct()</code></pre>
+<div id="produce-the-table-for-the-rank-of-the-name-olivia" class="section level3">
+<h3>produce the table for the rank of the name olivia</h3>
+<pre class="r"><code>olivia_table=filter(baby_data,childs_first_name==&quot;olivia&quot;)%&gt;%
+  select(-gender,-childs_first_name,-count)%&gt;%
+  mutate(year_of_birth=as.factor(year_of_birth))</code></pre>
+</div>
+<div id="pivot-the-year-into-columns" class="section level3">
+<h3>pivot the year into columns</h3>
+<pre class="r"><code>pivot_wider(olivia_table,names_from = year_of_birth,values_from = rank)</code></pre>
+<pre><code>## # A tibble: 4 x 7
+##   ethnicity                  `2016` `2015` `2014` `2013` `2012` `2011`
+##   &lt;chr&gt;                       &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt;
+## 1 asian and pacific islander      1      1      1      3      3      4
+## 2 black non hispanic              8      4      8      6      8     10
+## 3 hispanic                       13     16     16     22     22     18
+## 4 white non hispanic              1      1      1      1      4      2</code></pre>
+</div>
 </div>
 
 
